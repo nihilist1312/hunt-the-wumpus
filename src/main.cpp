@@ -1,6 +1,14 @@
 #include <iostream>
+#include <algorithm>
 #include <string>
-#include <format>
+#include <vector>
+#include <random>
+// #include <format>
+
+std::mt19937 rng(std::random_device{}());
+
+namespace Messages
+{
 
 const std::string WELLCOME_MESSAGE = u8R"(Hunt the Wumpus!
 
@@ -93,9 +101,117 @@ const std::string MOVE_WHERE = u8"\t> Куда идти? Попробуй вве
 const std::string SHOOT_WHERE = u8"\t> В какую комнату стрелять? Попробуй ввести «s{}».";
 
 const std::string INCORRECT_INPUT = u8"\t> Я не понимаю. Попробуйте ввести «?» для справки.";
+}
+
+struct Cave {
+    int number = 0;
+    std::vector<Cave*> nearby;
+    bool is_wump_here = false;
+    bool is_pit_here = false;
+    bool is_bats_here = false;
+
+    Cave(int n) : number(n) {}
+    Cave(int num, std::vector<Cave*> n) : number(num), nearby(n) {}
+    void attach(Cave* n);
+};
+
+class Map {
+public:
+    void move_to(int cave);
+    void shoot_to(int cave);
+    void print() const;
+    Map();
+private:
+    Cave* current_cave = nullptr;
+    Cave** all_caves = nullptr;
+    Cave** gen_map();
+};
+
+void Cave::attach(Cave* n)
+{
+    nearby.push_back(n);
+    n->nearby.push_back(this);
+}
+
+std::vector<int> get_cave_numbers()
+{
+    std::vector<int> nums;
+    nums.reserve(20);
+    for (int i = 1; i <= 20; i++) nums.push_back(i);
+    std::shuffle(nums.begin(), nums.end(), rng);
+    return nums;
+}
+
+Map::Map()
+{
+    if (all_caves) {
+        for (int i = 0; i < 20; i++)
+            delete all_caves[i];
+        delete [] all_caves;
+        all_caves = nullptr;
+        current_cave = nullptr;
+    }
+    all_caves = gen_map();
+    current_cave = all_caves[0];
+}
+
+Cave** Map::gen_map()
+{
+    std::vector<int> cave_nums = get_cave_numbers();
+    Cave** caves = new Cave*[20];
+
+    // создания пещер 1-5
+    caves[0] = new Cave(cave_nums[0]);
+    for (int i = 1; i < 5; i++) {
+        caves[i] = new Cave(cave_nums[i]);
+        caves[i]->attach(caves[i - 1]);
+    }
+    caves[4]->attach(caves[0]);
+
+    // создание пещер 6-12
+    for (int i = 5; i < 12; i++) {
+        caves[i] = new Cave(cave_nums[i]);
+        caves[i]->attach(caves[i - 1]);
+    }
+    caves[11]->attach(caves[7]);
+
+    // создание пещер 13-20
+    std::vector<int> to_be_attached{5,3,10,2,9,1,8,0};
+    for (int i = 12; i < 20; i++) {
+        caves[i] = new Cave(cave_nums[i]);
+        caves[i]->attach(caves[i - 1]);
+        caves[i]->attach(caves[to_be_attached[i - 12]]);
+    }
+    caves[19]->attach(caves[6]);
+
+    return caves;
+}
+
+void Map::print() const
+{
+    if (all_caves == nullptr) {
+        std::cout << "Карта пуста.\n";
+        return;
+    }
+    for (int i = 1; i <= 20; i++) {
+
+        std::cout << i << ":\t{";
+        Cave* t = all_caves[0];
+        for (int j = 1; j < 20; j++) {
+            if (t->number == i) break;
+            else t = all_caves[j];
+        }
+        for (int j = 0; j < t->nearby.size(); j++) {
+            std::cout << t->nearby[j]->number;
+            if (j != t->nearby.size() - 1) std::cout << ", ";
+        }
+        std::cout << "}\n";
+    }
+}
 
 int main()
 {
-    std::cout << WELLCOME_MESSAGE << '\n';
+    Map map;
+    map.print();
     return 0;
 }
