@@ -5,6 +5,8 @@
 #include <random>
 // #include <format>
 
+using std::cout, std::vector;
+
 std::mt19937 rng(std::random_device{}());
 
 int randint(int a, int b)
@@ -13,9 +15,9 @@ int randint(int a, int b)
     return dist_int(rng);
 }
 
-std::vector<int> random_numbers(int size, int a, int b)
+vector<int> random_numbers(int size, int a, int b)
 {
-    std::vector<int> res(size);
+    vector<int> res(size);
     for (int i = 0; i < size; i++) {
         res[i] = randint(a, b);
         while (true) {
@@ -130,13 +132,13 @@ const std::string INCORRECT_INPUT = u8"\t> Я не понимаю. Попроб�
 
 struct Cave {
     int number = 0;
-    std::vector<Cave*> nearby;
+    vector<Cave*> nearby;
     bool is_wump_here = false;
     bool is_pit_here = false;
     bool is_bats_here = false;
 
     explicit Cave(int num) : number(num) {}
-    Cave(int num, const std::vector<Cave*>& n) : number(num), nearby(n) {}
+    Cave(int num, const vector<Cave*>& n) : number(num), nearby(n) {}
     void attach(Cave* n);
 };
 
@@ -158,9 +160,9 @@ void Cave::attach(Cave* n)
     n->nearby.push_back(this);
 }
 
-std::vector<int> get_cave_numbers()
+vector<int> get_cave_numbers()
 {
-    std::vector<int> nums;
+    vector<int> nums;
     nums.reserve(20);
     for (int i = 1; i <= 20; i++) nums.push_back(i);
     std::shuffle(nums.begin(), nums.end(), rng);
@@ -182,7 +184,7 @@ Map::Map()
 
 Cave** Map::gen_map()
 {
-    std::vector<int> cave_nums = get_cave_numbers();
+    vector<int> cave_nums = get_cave_numbers();
     Cave** caves = new Cave*[20];
 
     // создания пещер 1-5
@@ -201,7 +203,7 @@ Cave** Map::gen_map()
     caves[11]->attach(caves[7]);
 
     // создание пещер 13-20
-    std::vector<int> to_be_attached{5,3,10,2,9,1,8,0};
+    vector<int> to_be_attached{5,3,10,2,9,1,8,0};
     for (int i = 12; i < 20; i++) {
         caves[i] = new Cave(cave_nums[i]);
         caves[i]->attach(caves[i - 1]);
@@ -210,7 +212,7 @@ Cave** Map::gen_map()
     caves[19]->attach(caves[6]);
 
     // наполнение пещер
-    std::vector<int> action_caves = random_numbers(5, 1, 19);
+    vector<int> action_caves = random_numbers(5, 1, 19);
     caves[action_caves[0]]->is_wump_here = true;
     caves[action_caves[1]]->is_pit_here = true;
     caves[action_caves[2]]->is_pit_here = true;
@@ -223,18 +225,18 @@ Cave** Map::gen_map()
 void Map::print() const
 {
     if (all_caves == nullptr) {
-        std::cout << u8"Карта пуста.\n";
+        cout << u8"Карта пуста.\n";
         return;
     }
 
     int wumpus_cave = 0;
-    std::vector<int> pit_caves;
-    std::vector<int> bats_caves;
+    vector<int> pit_caves;
+    vector<int> bats_caves;
 
     // вывод сети пещер
     for (int i = 1; i <= 20; i++) {
 
-        std::cout << i << ":\t{";
+        cout << i << ":\t{";
         Cave* t = all_caves[0];
         // поиск пещеры с номером i
         for (int j = 1; j < 20; j++) {
@@ -243,10 +245,10 @@ void Map::print() const
         }
         // вывод соседей
         for (int j = 0; j < t->nearby.size(); j++) {
-            std::cout << t->nearby[j]->number;
-            if (j != t->nearby.size() - 1) std::cout << ", ";
+            cout << t->nearby[j]->number;
+            if (j != t->nearby.size() - 1) cout << ", ";
         }
-        std::cout << "}\n";
+        cout << "}\n";
 
         // проверка пещеры на события
         if (t->is_wump_here) wumpus_cave = i;
@@ -255,24 +257,24 @@ void Map::print() const
     }
 
     // вывод расположения событий
-    std::cout << u8"Wumpus находится в пещере " << wumpus_cave << '\n';
-    std::cout << u8"Ямы расположены в пещерах: ";
+    cout << u8"Wumpus находится в пещере " << wumpus_cave << '\n';
+    cout << u8"Ямы расположены в пещерах: ";
     for (int i = 0; i < pit_caves.size(); i++) {
-        std::cout << pit_caves[i];
-        if (i != pit_caves.size() - 1) std::cout << ", ";
-        else std::cout << '\n';
+        cout << pit_caves[i];
+        if (i != pit_caves.size() - 1) cout << ", ";
+        else cout << '\n';
     }
-    std::cout << u8"Летучие мыши расположены в пещерах: ";
+    cout << u8"Летучие мыши расположены в пещерах: ";
     for (int i = 0; i < bats_caves.size(); i++) {
-        std::cout << bats_caves[i];
-        if (i != bats_caves.size() - 1) std::cout << ", ";
-        else std::cout << '\n';
+        cout << bats_caves[i];
+        if (i != bats_caves.size() - 1) cout << ", ";
+        else cout << '\n';
     }
 }
 
 int main()
 {
     Map map;
-    map.print();
+
     return 0;
 }
