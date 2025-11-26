@@ -7,6 +7,31 @@
 
 std::mt19937 rng(std::random_device{}());
 
+int randint(int a, int b)
+{
+    std::uniform_int_distribution<int> dist_int(a, b);
+    return dist_int(rng);
+}
+
+std::vector<int> random_numbers(int size, int a, int b)
+{
+    std::vector<int> res(size);
+    for (int i = 0; i < size; i++) {
+        res[i] = randint(a, b);
+        while (true) {
+            bool is_unique = true;
+            for (int j = i - 1; j >= 0; j--) {
+                if (res[i] == res[j]) {
+                    is_unique = false;
+                    res[i] = randint(a, b);
+                }
+            }
+            if (is_unique) break;
+        }
+    }
+    return res;
+}
+
 namespace Messages
 {
 
@@ -184,28 +209,64 @@ Cave** Map::gen_map()
     }
     caves[19]->attach(caves[6]);
 
+    // наполнение пещер
+    std::vector<int> action_caves = random_numbers(5, 1, 19);
+    caves[action_caves[0]]->is_wump_here = true;
+    caves[action_caves[1]]->is_pit_here = true;
+    caves[action_caves[2]]->is_pit_here = true;
+    caves[action_caves[3]]->is_bats_here = true;
+    caves[action_caves[4]]->is_bats_here = true;
+
     return caves;
 }
 
 void Map::print() const
 {
     if (all_caves == nullptr) {
-        std::cout << "Карта пуста.\n";
+        std::cout << u8"Карта пуста.\n";
         return;
     }
+
+    int wumpus_cave = 0;
+    std::vector<int> pit_caves;
+    std::vector<int> bats_caves;
+
+    // вывод сети пещер
     for (int i = 1; i <= 20; i++) {
 
         std::cout << i << ":\t{";
         Cave* t = all_caves[0];
+        // поиск пещеры с номером i
         for (int j = 1; j < 20; j++) {
             if (t->number == i) break;
             else t = all_caves[j];
         }
+        // вывод соседей
         for (int j = 0; j < t->nearby.size(); j++) {
             std::cout << t->nearby[j]->number;
             if (j != t->nearby.size() - 1) std::cout << ", ";
         }
         std::cout << "}\n";
+
+        // проверка пещеры на события
+        if (t->is_wump_here) wumpus_cave = i;
+        if (t->is_bats_here) bats_caves.push_back(i);
+        if (t->is_pit_here) pit_caves.push_back(i);
+    }
+
+    // вывод расположения событий
+    std::cout << u8"Wumpus находится в пещере " << wumpus_cave << '\n';
+    std::cout << u8"Ямы расположены в пещерах: ";
+    for (int i = 0; i < pit_caves.size(); i++) {
+        std::cout << pit_caves[i];
+        if (i != pit_caves.size() - 1) std::cout << ", ";
+        else std::cout << '\n';
+    }
+    std::cout << u8"Летучие мыши расположены в пещерах: ";
+    for (int i = 0; i < bats_caves.size(); i++) {
+        std::cout << bats_caves[i];
+        if (i != bats_caves.size() - 1) std::cout << ", ";
+        else std::cout << '\n';
     }
 }
 
