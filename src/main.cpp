@@ -135,8 +135,8 @@ struct Cave {
     bool is_pit_here = false;
     bool is_bats_here = false;
 
-    Cave(int n) : number(n) {}
-    Cave(int num, std::vector<Cave*> n) : number(num), nearby(n) {}
+    explicit Cave(int num) : number(num) {}
+    Cave(int num, const std::vector<Cave*>& n) : number(num), nearby(n) {}
     void attach(Cave* n);
 };
 
